@@ -59,7 +59,7 @@ def listUsers(db):
 
     return { 'result': result }
 
-@app.get('/Users/<id>')
+@app.get('/Users/<username>')
 def showUser(id, db):
     cursor = db.execute('select * from Users where id=?', [id])
     row = cursor.fetchone()
@@ -122,7 +122,8 @@ def do_upload():
         return 'File extension not allowed.'
 
     save_path = get_save_path_for_category(category)
-    file_path = os.path.join(savepath, username)
+    filename = username + ext
+    file_path = os.path.join(savepath, filename)
     upload.save(file_path)
     return 'OK'
 
