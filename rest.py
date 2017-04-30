@@ -88,6 +88,20 @@ def createUser(db):
         }
     #return { "link": make_url('Users', cursor.lastrowid) }
 
+@app.post('/Login')
+def createUser(db):
+    data = bottle.request.forms
+    cursor = db.execute('select * from Users where username=?, password=?', data['username'], data['password'])
+    row = cursor.fetchone()
+    if not row:
+        return {
+            'success': "false"
+        }
+
+    return {
+        'success': "true"
+    }
+
 @app.post('/upload')
 def do_upload():
     #category   = request.forms.get('category')
