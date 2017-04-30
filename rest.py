@@ -80,9 +80,12 @@ def isUser(username, db):
 @app.post('/Users')
 def createUser(db):
     data = bottle.request.forms
-    cursor = db.execute('insert into Users (name, photo, location, description) values (?, ?, ?, ?)',
-        (data['name'], data['photo'], data['location'], data['description']))
-    return { "link": make_url('Users', cursor.lastrowid) }
+    cursor = db.execute('insert into Users (username, password) values (?, ?)',
+        (data['username'], data['password']))
+    return {
+            'success': "true"
+        }
+    #return { "link": make_url('Users', cursor.lastrowid) }
 
 @app.post('/upload')
 def do_upload():
