@@ -56,7 +56,7 @@ def showUser(id, db):
     cursor = db.execute('select * from Users where id=?', [id])
     row = cursor.fetchone()
     if not row:
-        return bottle.HTTPError(404, "Sailor not found")
+        return bottle.HTTPError(404, "User not found")
 
     return {
         'id': row['id'],
