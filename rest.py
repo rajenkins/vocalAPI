@@ -43,7 +43,7 @@ def listUsers(db):
 
     cursor = db.execute(sql, args)
 
-    result = [ { 'link': make_url('Users', row['id']), 'name': row['name'] }
+    result = [ { 'link': make_url('Users', row['id']), 'username': row['username'] }
                for row in cursor ]
 
     # result = [ { 'id': row['id'], 'name': row['name'] }
@@ -60,6 +60,7 @@ def showUser(id, db):
 
     return {
         'id': row['id'],
+        'username': row['username'],
         'name': row['name'],
         'description': row['description']
     }
