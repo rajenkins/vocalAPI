@@ -29,6 +29,14 @@ def query_to_where(sql, queryMap):
     else:
         return (sql, [])
 
+def get_save_path_for_category(category):
+    base = "./files/sounds/"
+    save_path = os.path.join (base, category)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    return save_path
+
+
 @app.get('/Users')
 def listUsers(db):
     queryMap = {
@@ -103,17 +111,19 @@ def createUser(db):
         'success': "true"
     }
 
+#upload file named 'upload' with category and username information included
 @app.post('/upload')
 def do_upload():
-    #category   = request.forms.get('category')
+    username = request.forms.get('username')
+    category   = request.forms.get('category')
     upload     = request.files.get('upload')
     name, ext = os.path.splitext(upload.filename)
-    #if ext not in ('.png','.jpg','.jpeg'):
-    #    return 'File extension not allowed.'
+    if ext not in ('.wav','.mp3'):
+        return 'File extension not allowed.'
 
-    #save_path = get_save_path_for_category(category)
-    save_path = "./files/sounds/"
-    upload.save(save_path) # appends upload.filename automatically
+    save_path = get_save_path_for_category(category)
+    file_path = os.path.join(savepath, username)
+    upload.save(file_path)
     return 'OK'
 
 if 'REQUEST_METHOD' in os.environ :
