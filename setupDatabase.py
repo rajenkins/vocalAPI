@@ -2,7 +2,7 @@
 
 import sqlite3
 
-conn = sqlite3.connect('vocal.db')
+conn = sqlite3.connect('./files/vocal.db')
 print "Opened database successfully";
 
 conn.execute('DROP TABLE IF EXISTS "USERS"')
