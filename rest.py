@@ -70,11 +70,11 @@ def isUser(name, db):
     row = cursor.fetchone()
     if not row:
         return {
-            'exists': "false",
+            'exists': "false"
         }
 
     return {
-        'exists': "true",
+        'exists': "true"
     }
 
 @app.post('/Users')
