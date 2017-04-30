@@ -91,7 +91,8 @@ def createUser(db):
 @app.post('/Login')
 def createUser(db):
     data = bottle.request.forms
-    cursor = db.execute('select * from Users where username=? INNER JOIN Users ON password=?', data['username'], data['password'])
+    new_data = (data['username'], data['password'])
+    cursor = db.execute('select * from Users where username=? INNER JOIN Users ON password=?', new_data)
     row = cursor.fetchone()
     if not row:
         return {
