@@ -1,0 +1,7 @@
+# Uploaded audio files and database
+files/
+*.db
+
+#bottle package
+bottle.py
+bottle_sqlite.py
