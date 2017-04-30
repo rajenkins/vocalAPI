@@ -3,6 +3,7 @@ import bottle
 import bottle.ext.sqlite
 import os
 from bottle import route, request, static_file, run
+import requests
 
 app = bottle.Bottle()
 plugin = bottle.ext.sqlite.Plugin(dbfile='./files/vocal.db')
@@ -15,6 +16,15 @@ def make_url(table, id):
     parts = bottle.request.urlparts
     path = parts[2].replace('/r1.cgi','')
     return '%s://%s%s/%s' % (parts[0], parts[1], path, id)
+
+def get_sound_url(username, category):
+    parts = bottle.request.urlparts
+    path = parts[2].replace('/rest.cgi','/files')
+    return '%s://%s%s.mp3' % (parts[0], parts[1], path)
+
+def does_url_exist(sound_url):
+    response = requests.head(sound_url)
+    return response.status_code < 400
 
 def query_to_where(sql, queryMap):
     query = bottle.request.query
@@ -60,8 +70,8 @@ def listUsers(db):
     return { 'result': result }
 
 @app.get('/Users/<username>')
-def showUser(id, db):
-    cursor = db.execute('select * from Users where id=?', [id])
+def showUser(username, db):
+    cursor = db.execute('select * from Users where username=?', [username])
     row = cursor.fetchone()
     if not row:
         return bottle.HTTPError(404, "User not found")
@@ -85,6 +95,14 @@ def isUser(username, db):
     return {
         'exists': "true"
     }
+
+@app.get('/sounds/<category>/<username>')
+def getUpload(username, category, db):
+    sound_url = get_sound_url(username,category)
+    if does_url_exist(sound_url):
+        return { "link": sound_url }
+    else:
+        return "Sound does not exist"
 
 @app.post('/Users')
 def createUser(db):
@@ -116,6 +134,8 @@ def createUser(db):
 def do_upload():
     username = request.forms.get('username')
     category   = request.forms.get('category')
+    if category not in ('cat1','cat2','cat3','cat4'):
+        return 'Category does not exist.'
     upload     = request.files.get('upload')
     name, ext = os.path.splitext(upload.filename)
     if ext not in ('.wav','.mp3'):
@@ -123,9 +143,12 @@ def do_upload():
 
     save_path = get_save_path_for_category(category)
     filename = username + ext
-    file_path = os.path.join(savepath, filename)
+    file_path = os.path.join(save_path, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
     upload.save(file_path)
     return 'OK'
+
 
 if 'REQUEST_METHOD' in os.environ :
     app.run(server='cgi')
