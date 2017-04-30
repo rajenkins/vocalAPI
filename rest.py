@@ -64,9 +64,9 @@ def showUser(id, db):
         'description': row['description']
     }
 
-@app.get('/Users/exists/<name>')
-def isUser(name, db):
-    cursor = db.execute('select * from Users where name=?', [name])
+@app.get('/Users/exists/<username>')
+def isUser(username, db):
+    cursor = db.execute('select * from Users where username=?', [username])
     row = cursor.fetchone()
     if not row:
         return {
