@@ -7,11 +7,11 @@ cursor = conn.cursor()
 
 print "Opened database successfully";
 
-conn.execute("INSERT INTO Users (name,photo,location,description) \
-      VALUES ('Paul', 'abc123', 'California', 'desc test' )");
+conn.execute("INSERT INTO Users (username, password, name, age,location,description) \
+      VALUES ('paul', 'password', 'Paul', '15', 'California', 'desc test' )");
 
-conn.execute("INSERT INTO Users (name,photo,location,description) \
-      VALUES ('John', 'abc124', 'Cali', 'test desc' )");
+conn.execute("INSERT INTO Users (username, password, name, age,location,description) \
+      VALUES ('johnny13', 'password', 'John', '14', 'California', 'desc test' )");
 
 print "test entry entered";
 
