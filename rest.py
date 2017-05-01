@@ -78,6 +78,7 @@ def showUser(username, db):
 
     return {
         'id': row['id'],
+        'age': row['age'],
         'username': row['username'],
         'name': row['name'],
         'description': row['description']
@@ -96,6 +97,37 @@ def isUser(username, db):
         'exists': "true"
     }
 
+@app.get('/Users/matches/<username>')
+def getMatches(username, db):
+    cursor = db.execute('''SELECT  ul1.liker
+                        FROM    user_likes ul1 
+                        WHERE ul1.like_type = "true" AND ul1.likee = ?
+                        AND ul1.liker 
+                        IN
+                        (
+                        SELECT  ul2.likee
+                        FROM    user_likes ul2
+                        WHERE ul2.liker = ? AND ul2.like_type="true"
+                        )''', (username, username))
+    result = [ row['liker']
+               for row in cursor ]
+    return { 'data': result }
+
+@app.get('/Users/queue/<username>')
+def getMatches(username, db):
+    cursor = db.execute('''SELECT  u.username
+                            FROM    users u 
+                            WHERE NOT u.username = ? AND u.username 
+                            NOT IN
+                                (
+                                SELECT  ul.likee
+                                FROM    user_likes ul
+                                WHERE ul.liker = ?
+                                )''', (username, username))
+    result = [ row['username']
+               for row in cursor ]
+    return { 'data': result }
+
 @app.get('/sounds/<category>/<username>')
 def getUpload(username, category, db):
     sound_url = get_sound_url(username,category)
@@ -107,8 +139,8 @@ def getUpload(username, category, db):
 @app.post('/Users')
 def createUser(db):
     data = bottle.request.forms
-    cursor = db.execute('insert into Users (username, password) values (?, ?)',
-        (data['username'], data['password']))
+    cursor = db.execute('insert into Users (username, password, age) values (?, ?, ?)',
+        (data['username'], data['password'], 0))
     return {
             'success': "true"
         }
@@ -168,6 +200,16 @@ def createUser(db):
         return { 'updated_age': "false", 'updated_name': "true"}
 
     return { 'updated_age': "false", 'updated_name': "false"}
+
+@app.post('/Users/like')
+def createUser(db):
+    data = bottle.request.forms
+    cursor = db.execute('insert into User_likes (liker, likee, like_type) values (?, ?, ?)',
+        (data['liker'], data['likee'], data['like_type']))
+    if data['like_type']:
+        return { 'liked': "true" }
+    else:
+        return { 'liked': "false" }
 
 
 if 'REQUEST_METHOD' in os.environ :
