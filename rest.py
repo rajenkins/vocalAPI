@@ -149,6 +149,26 @@ def do_upload():
     upload.save(file_path)
     return 'OK'
 
+@app.post('/Users/update')
+def createUser(db):
+    data = bottle.request.forms
+    if 'age' in data and 'name' in data:
+        cursor = db.execute('UPDATE Users SET age = ?, name= ? WHERE username = ?;',
+            (data['age'], data['name'], data['username']))
+        return { 'updated_age': "true", 'updated_name': "true"}
+
+    elif 'age' in data:
+        cursor = db.execute('UPDATE Users SET age = ? WHERE username = ?;',
+            (data['age'], data['username']))
+        return { 'updated_age': "true", 'updated_name': "false"}
+
+    elif 'name' in data:
+        cursor = db.execute('UPDATE Users SET name = ? WHERE username = ?;',
+            (data['name'], data['username']))
+        return { 'updated_age': "false", 'updated_name': "true"}
+
+    return { 'updated_age': "false", 'updated_name': "false"}
+
 
 if 'REQUEST_METHOD' in os.environ :
     app.run(server='cgi')
