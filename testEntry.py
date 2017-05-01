@@ -2,21 +2,39 @@
 
 import sqlite3
 
-conn = sqlite3.connect('./vocal.db')
+conn = sqlite3.connect('./files/vocal.db')
 cursor = conn.cursor()
 
 print "Opened database successfully";
 
-conn.execute("INSERT INTO Users (name,photo,location,description) \
-      VALUES ('Paul', 'abc123', 'California', 'desc test' )");
+# conn.execute("INSERT INTO Users (username, password, name, age,location,description) \
+#       VALUES ('paul', 'password', 'Paul', '15', 'California', 'desc test' )");
 
-conn.execute("INSERT INTO Users (name,photo,location,description) \
-      VALUES ('John', 'abc124', 'Cali', 'test desc' )");
+# conn.execute("INSERT INTO Users (username, password, name, age,location,description) \
+#       VALUES ('johnny13', 'password', 'John', '14', 'California', 'desc test' )");
+
+# conn.execute("INSERT INTO User_likes (liker, likee, like_type) \
+#       VALUES ('Paul', 'Ryan', 'true')");
+
+# conn.execute("INSERT INTO User_likes (liker, likee, like_type) \
+#       VALUES ('Ryan', 'Paul', 'false')");
+
+# conn.execute("INSERT INTO User_likes (liker, likee, like_type) \
+#       VALUES ('Paul', 'Beth', 'true')");
+
+# conn.execute("INSERT INTO User_likes (liker, likee, like_type) \
+#       VALUES ('Beth', 'Paul', 'true')");
+
+# conn.execute("INSERT INTO User_likes (liker, likee, like_type) \
+#       VALUES ('Paul', 'Sarah', 'true')");
+
+# conn.execute("INSERT INTO User_likes (liker, likee, like_type) \
+#       VALUES ('Sarah', 'Paul', 'true')");
 
 print "test entry entered";
 
 cursor.execute("""
-select * from Users U
+select * from User_likes U
 """)
 for row in cursor:
     print row

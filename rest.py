@@ -3,6 +3,7 @@ import bottle
 import bottle.ext.sqlite
 import os
 from bottle import route, request, static_file, run
+import requests
 
 app = bottle.Bottle()
 plugin = bottle.ext.sqlite.Plugin(dbfile='./files/vocal.db')
@@ -16,6 +17,15 @@ def make_url(table, id):
     path = parts[2].replace('/r1.cgi','')
     return '%s://%s%s/%s' % (parts[0], parts[1], path, id)
 
+def get_sound_url(username, category):
+    parts = bottle.request.urlparts
+    path = parts[2].replace('/rest.cgi','/files')
+    return '%s://%s%s.mp3' % (parts[0], parts[1], path)
+
+def does_url_exist(sound_url):
+    response = requests.head(sound_url)
+    return response.status_code < 400
+
 def query_to_where(sql, queryMap):
     query = bottle.request.query
     where = []
@@ -28,6 +38,14 @@ def query_to_where(sql, queryMap):
         return (sql + ' where ' + ' and '.join(where), args)
     else:
         return (sql, [])
+
+def get_save_path_for_category(category):
+    base = "./files/sounds/"
+    save_path = os.path.join (base, category)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    return save_path
+
 
 @app.get('/Users')
 def listUsers(db):
@@ -51,22 +69,24 @@ def listUsers(db):
 
     return { 'result': result }
 
-@app.get('/Users/<id>')
-def showUser(id, db):
-    cursor = db.execute('select * from Users where id=?', [id])
+@app.get('/Users/<username>')
+def showUser(username, db):
+    cursor = db.execute('select * from Users where username=?', [username])
     row = cursor.fetchone()
     if not row:
-        return bottle.HTTPError(404, "Sailor not found")
+        return bottle.HTTPError(404, "User not found")
 
     return {
         'id': row['id'],
+        'age': row['age'],
+        'username': row['username'],
         'name': row['name'],
         'description': row['description']
     }
 
-@app.get('/Users/exists/<name>')
-def isUser(name, db):
-    cursor = db.execute('select * from Users where name=?', [name])
+@app.get('/Users/exists/<username>')
+def isUser(username, db):
+    cursor = db.execute('select * from Users where username=?', [username])
     row = cursor.fetchone()
     if not row:
         return {
@@ -77,25 +97,120 @@ def isUser(name, db):
         'exists': "true"
     }
 
+@app.get('/Users/matches/<username>')
+def getMatches(username, db):
+    cursor = db.execute('''SELECT  ul1.liker
+                        FROM    user_likes ul1 
+                        WHERE ul1.like_type = "true" AND ul1.likee = ?
+                        AND ul1.liker 
+                        IN
+                        (
+                        SELECT  ul2.likee
+                        FROM    user_likes ul2
+                        WHERE ul2.liker = ? AND ul2.like_type="true"
+                        )''', (username, username))
+    result = [ row['liker']
+               for row in cursor ]
+    return { 'data': result }
+
+@app.get('/Users/queue/<username>')
+def getMatches(username, db):
+    cursor = db.execute('''SELECT  u.username
+                            FROM    users u 
+                            WHERE NOT u.username = ? AND u.username 
+                            NOT IN
+                                (
+                                SELECT  ul.likee
+                                FROM    user_likes ul
+                                WHERE ul.liker = ?
+                                )''', (username, username))
+    result = [ row['username']
+               for row in cursor ]
+    return { 'data': result }
+
+@app.get('/sounds/<category>/<username>')
+def getUpload(username, category, db):
+    sound_url = get_sound_url(username,category)
+    if does_url_exist(sound_url):
+        return { "link": sound_url }
+    else:
+        return "Sound does not exist"
+
 @app.post('/Users')
 def createUser(db):
     data = bottle.request.forms
-    cursor = db.execute('insert into Users (name, photo, location, description) values (?, ?, ?, ?)',
-        (data['name'], data['photo'], data['location'], data['description']))
-    return { "link": make_url('Users', cursor.lastrowid) }
+    cursor = db.execute('insert into Users (username, password, age) values (?, ?, ?)',
+        (data['username'], data['password'], 0))
+    return {
+            'success': "true"
+        }
+    #return { "link": make_url('Users', cursor.lastrowid) }
 
+@app.post('/Login')
+def createUser(db):
+    data = bottle.request.forms
+    new_data = (data['username'], data['password'])
+    cursor = db.execute('select * from Users where username=? AND password=?', new_data)
+    row = cursor.fetchone()
+    if not row:
+        return {
+            'success': "false"
+        }
+
+    return {
+        'success': "true"
+    }
+
+#upload file named 'upload' with category and username information included
 @app.post('/upload')
 def do_upload():
-    #category   = request.forms.get('category')
+    username = request.forms.get('username')
+    category   = request.forms.get('category')
+    if category not in ('cat1','cat2','cat3','cat4'):
+        return 'Category does not exist.'
     upload     = request.files.get('upload')
     name, ext = os.path.splitext(upload.filename)
-    #if ext not in ('.png','.jpg','.jpeg'):
-    #    return 'File extension not allowed.'
+    if ext not in ('.wav','.mp3'):
+        return 'File extension not allowed.'
 
-    #save_path = get_save_path_for_category(category)
-    save_path = "./files/sounds/"
-    upload.save(save_path) # appends upload.filename automatically
+    save_path = get_save_path_for_category(category)
+    filename = username + ext
+    file_path = os.path.join(save_path, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    upload.save(file_path)
     return 'OK'
+
+@app.post('/Users/update')
+def createUser(db):
+    data = bottle.request.forms
+    if 'age' in data and 'name' in data:
+        cursor = db.execute('UPDATE Users SET age = ?, name= ? WHERE username = ?;',
+            (data['age'], data['name'], data['username']))
+        return { 'updated_age': "true", 'updated_name': "true"}
+
+    elif 'age' in data:
+        cursor = db.execute('UPDATE Users SET age = ? WHERE username = ?;',
+            (data['age'], data['username']))
+        return { 'updated_age': "true", 'updated_name': "false"}
+
+    elif 'name' in data:
+        cursor = db.execute('UPDATE Users SET name = ? WHERE username = ?;',
+            (data['name'], data['username']))
+        return { 'updated_age': "false", 'updated_name': "true"}
+
+    return { 'updated_age': "false", 'updated_name': "false"}
+
+@app.post('/Users/like')
+def createUser(db):
+    data = bottle.request.forms
+    cursor = db.execute('insert into User_likes (liker, likee, like_type) values (?, ?, ?)',
+        (data['liker'], data['likee'], data['like_type']))
+    if data['like_type']:
+        return { 'liked': "true" }
+    else:
+        return { 'liked': "false" }
+
 
 if 'REQUEST_METHOD' in os.environ :
     app.run(server='cgi')
