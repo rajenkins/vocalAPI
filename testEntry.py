@@ -31,13 +31,23 @@ print "Opened database successfully";
 # conn.execute("INSERT INTO User_likes (liker, likee, like_type) \
 #       VALUES ('Sarah', 'Paul', 'true')");
 
-print "test entry entered";
+print "likes";
 
 cursor.execute("""
 select * from User_likes U
 """)
 for row in cursor:
     print row
+
+print "Users";
+
+cursor.execute("""
+select * from Users U
+""")
+for row in cursor:
+    print row
+
+
 
 conn.commit()
 conn.close()

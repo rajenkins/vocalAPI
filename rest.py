@@ -23,12 +23,12 @@ def make_url(table, id):
 def get_sound_url(username, category):
     parts = bottle.request.urlparts
     path = parts[2].replace('/rest.cgi','/files')
-    return '%s://%s%s.wav' % (parts[0], parts[1], path)
+    return '%s://%s%s.m4a' % (parts[0], parts[1], path)
 
 def get_sound_url_for_Users(username, category):
     parts = bottle.request.urlparts
     path = parts[2].replace('/rest.cgi/Users','/files/sounds/cat1')
-    return '%s://%s%s.wav' % (parts[0], parts[1], path)
+    return '%s://%s%s.m4a' % (parts[0], parts[1], path)
 
 def does_url_exist(sound_url):
     response = requests.head(sound_url)
@@ -111,7 +111,7 @@ def showUser(username, db):
             'id': row['id'],
             'age': row['age'],
             'username': row['username'],
-            'BioUrl': "http://wwwx.cs.unc.edu/Courses/comp580-s17/users/Vocal/files/sounds/cat2/Paul.wav",
+            'BioUrl': sound_url,
             'name': row['name'],
             'description': row['description']
         }
@@ -121,7 +121,7 @@ def showUser(username, db):
             'id': row['id'],
             'age': row['age'],
             'username': row['username'],
-            'BioUrl': "http://wwwx.cs.unc.edu/Courses/comp580-s17/users/Vocal/files/sounds/cat2/Paul.wav",
+            'BioUrl': "",
             'name': row['name'],
             'description': row['description']
         }
@@ -224,8 +224,8 @@ def do_upload():
     #convert saved file to mp3
     # if ext == '.wav':
     #     convert_wav_to_mp3(save_path, username, file_path)
-    if ext == '.m4a':
-        convert_m4a_to_wav(save_path, username, file_path)
+    # if ext == '.m4a':
+    #     convert_m4a_to_wav(save_path, username, file_path)
 
     #delete the wav file
     # if os.path.exists(file_path):

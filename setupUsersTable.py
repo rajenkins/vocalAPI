@@ -5,7 +5,7 @@ import sqlite3
 conn = sqlite3.connect('./files/vocal.db')
 print "Opened database successfully";
 
-#conn.execute('DROP TABLE IF EXISTS "USERS"')
+conn.execute('DROP TABLE IF EXISTS "USERS"')
 conn.execute('''CREATE TABLE USERS
        (ID INTEGER PRIMARY KEY,
        USERNAME			CHAR(50) NOT NULL,
