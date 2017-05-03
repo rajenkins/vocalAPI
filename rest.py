@@ -4,6 +4,9 @@ import bottle.ext.sqlite
 import os
 from bottle import route, request, static_file, run
 import requests
+from pydub import AudioSegment
+#AudioSegment.converter = "/afs/cs.unc.edu/project/courses/comp580-s17/public_html/users/Vocal/_ffmpeg"
+
 
 app = bottle.Bottle()
 plugin = bottle.ext.sqlite.Plugin(dbfile='./files/vocal.db')
@@ -20,7 +23,12 @@ def make_url(table, id):
 def get_sound_url(username, category):
     parts = bottle.request.urlparts
     path = parts[2].replace('/rest.cgi','/files')
-    return '%s://%s%s.mp3' % (parts[0], parts[1], path)
+    return '%s://%s%s.m4a' % (parts[0], parts[1], path)
+
+def get_sound_url_for_Users(username, category):
+    parts = bottle.request.urlparts
+    path = parts[2].replace('/rest.cgi/Users','/files/sounds/cat1')
+    return '%s://%s%s.m4a' % (parts[0], parts[1], path)
 
 def does_url_exist(sound_url):
     response = requests.head(sound_url)
@@ -45,6 +53,27 @@ def get_save_path_for_category(category):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     return save_path
+
+# def convert_wav_to_mp3(save_path, username, full_file_path):
+#     #AudioSegment.converter = "./ffmpeg-3.3"
+#     wav_audio = AudioSegment.from_file(full_file_path, format="wav")
+#     new_file_path = os.path.join(save_path, username + ".mp3")
+#     if os.path.exists(new_file_path):
+#         os.remove(new_file_path)
+#     if not os.path.exists(save_path):
+#         os.makedirs(save_path)
+#     wav_audio.export(new_file_path, format="mp3")
+
+def convert_m4a_to_wav(save_path, username, full_file_path):
+    #AudioSegment.converter = "./ffmpeg-3.3"
+    m4a_audio = AudioSegment.from_file(full_file_path, format="m4a")
+    new_file_path = os.path.join(save_path, username + ".wav")
+    if os.path.exists(new_file_path):
+        os.remove(new_file_path)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    m4a_audio.export(new_file_path, format=".wav")
+
 
 
 @app.get('/Users')
@@ -76,13 +105,26 @@ def showUser(username, db):
     if not row:
         return bottle.HTTPError(404, "User not found")
 
-    return {
-        'id': row['id'],
-        'age': row['age'],
-        'username': row['username'],
-        'name': row['name'],
-        'description': row['description']
-    }
+    sound_url = get_sound_url_for_Users(username,'cat1')
+    if does_url_exist(sound_url):
+        return {
+            'id': row['id'],
+            'age': row['age'],
+            'username': row['username'],
+            'BioUrl': sound_url,
+            'name': row['name'],
+            'description': row['description']
+        }
+
+    else:
+        return {
+            'id': row['id'],
+            'age': row['age'],
+            'username': row['username'],
+            'BioUrl': "",
+            'name': row['name'],
+            'description': row['description']
+        }
 
 @app.get('/Users/exists/<username>')
 def isUser(username, db):
@@ -130,7 +172,7 @@ def getMatches(username, db):
 
 @app.get('/sounds/<category>/<username>')
 def getUpload(username, category, db):
-    sound_url = get_sound_url(username,category)
+    sound_url = get_sound_url(username,'cat1')
     if does_url_exist(sound_url):
         return { "link": sound_url }
     else:
@@ -170,15 +212,26 @@ def do_upload():
         return 'Category does not exist.'
     upload     = request.files.get('upload')
     name, ext = os.path.splitext(upload.filename)
-    if ext not in ('.wav','.mp3'):
+    if ext not in ('.wav','.mp3', '.3gpp', '.m4a', '.mp4'):
         return 'File extension not allowed.'
-
     save_path = get_save_path_for_category(category)
     filename = username + ext
     file_path = os.path.join(save_path, filename)
     if os.path.exists(file_path):
         os.remove(file_path)
     upload.save(file_path)
+
+    #convert saved file to mp3
+    # if ext == '.wav':
+    #     convert_wav_to_mp3(save_path, username, file_path)
+    # if ext == '.m4a':
+    #     convert_m4a_to_wav(save_path, username, file_path)
+
+    #delete the wav file
+    # if os.path.exists(file_path):
+    #     os.remove(file_path)
+
+
     return 'OK'
 
 @app.post('/Users/update')
